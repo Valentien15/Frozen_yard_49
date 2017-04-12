@@ -14,34 +14,72 @@ namespace ProgramForIntersection
     {
         static void Main(string[] args)
         {
+            ACreate create = new ACreate();
+            create.initFromConsole();
+
+            AGetCams getCams = new AGetCams();
+
+            ABrains brains = new ABrains(create);
+
+            ASimulaton simulation = new ASimulaton(create);
+
+            while (true)
+            {
+                getCams.getByComPort(create);
+                
+            }
+            
 
         }
     }
 
-    class create
+    class ACreate
     {
-        public static int flagOfCreations = 0;
+        public readonly int maxWaitingTime = 90;
 
-        public static int ways = Console.Read();
+        public readonly int percentOfDelay = 9;
 
-        public static int lanes = Console.Read();
+        public readonly int maxQtyOfCarsOnOut = 50;
 
-        public static int[] lanesArray = new int[lanes];
+        public int flagOfCreations = 0;
 
-        public static int[] carsQty = new int[lanes];
+        public int ways = 0;
 
-        public static int[] lenghtLanes = new int[lanes];
+        public int lanes = 0;
 
-        public static int[] wayArray = new int[ways];
+        public int[] lanesArray = null;
+
+        public int[] carsQty = null;
+
+        public int[] lenghtLanes = null;
+
+        public int[] wayArray = null;
         //больше нуля исток, меньше сток
 
-        public static int[] turnOnLanes = new int[lanes];
+        public int[] turnOnLanes = null;
 
-        public static int[] timeOfWaiting = new int[lanes];
+        public int[] timeOfWaiting = null;
 
-        public static int[] waysArrayBlocked = new int[lanes];
+        public int[] waysArrayBlocked = null;
 
-        public const int maxWaitingTime = 90, percentOfDelay = 9, maxQtyOfCarsOnOut = 50;
+
+        public void initFromConsole()
+        {
+            ways = Console.Read();
+            lanes = Console.Read();
+            lanesArray = new int[lanes];
+            carsQty = new int[lanes];
+            lenghtLanes = new int[lanes];
+            wayArray = new int[ways];
+            turnOnLanes = new int[lanes];
+            timeOfWaiting = new int[lanes];
+            waysArrayBlocked = new int[lanes];
+
+
+            getRoadMark();
+            fullNeedArrays();
+        }
+
 
         private void fullNeedArrays()
         {
@@ -61,10 +99,15 @@ namespace ProgramForIntersection
         }
     }
 
-    class getCams
+    class AGetCams
     {
-        void getByComPort()
+        public void getByComPort(ACreate create)
         {
+            if (create == null)
+            {
+                return;
+            }
+
             Random rndCars = new Random();
             for (int i = 0; i < create.lanes; i++)
             {
@@ -74,24 +117,38 @@ namespace ProgramForIntersection
         }
     }
 
-    class brains
+    class ABrains
     {
-        int[] priorityOfLanes = new int[create.lanes];
-        int[] priorityOfLanesCopy = new int[create.lanes];
-        int[] writedLanesToOn = new int[create.lanes];
-        static int deltaTime = 0;
+        private readonly ACreate mCreate = null;
+
+
+
+        private int[] priorityOfLanes = null;
+        private int[] priorityOfLanesCopy = null;
+        private int[] writedLanesToOn = null;
+        private int deltaTime = 0;
         Stopwatch stopWatch = new Stopwatch();
+
+        public ABrains(ACreate create)
+        {
+            mCreate = create;
+            priorityOfLanes = new int[mCreate.lanes];
+            priorityOfLanesCopy = new int[mCreate.lanes];
+            writedLanesToOn = new int[mCreate.lanes];
+        }
+
+
 
         void priority()
         {
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
-                priorityOfLanes[i] = create.carsQty[i] / create.lenghtLanes[i];
+                priorityOfLanes[i] = mCreate.carsQty[i] / mCreate.lenghtLanes[i];
             }
         }
         void createCopy()
         {
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
                 priorityOfLanesCopy[i] = priorityOfLanes[i];
             }
@@ -99,9 +156,9 @@ namespace ProgramForIntersection
         void sortingPriority()
         {
             int minQty = 9999, minQtyPre = 0, iBuff = 0;
-            for (int j = 0; j < create.lanes; j++)
+            for (int j = 0; j < mCreate.lanes; j++)
             {
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
                     if (priorityOfLanesCopy[i] < minQty && priorityOfLanesCopy[i] > minQtyPre)
                     {
@@ -109,7 +166,7 @@ namespace ProgramForIntersection
                         iBuff = i;
                     }
                 }
-                priorityOfLanes[create.lanes - j] = iBuff;
+                priorityOfLanes[mCreate.lanes - j] = iBuff;
                 minQtyPre = minQty;
             }
         }
@@ -128,11 +185,11 @@ namespace ProgramForIntersection
             deltaTime += StopWatch();
             if (deltaTime > 1000)
             {
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
-                    create.timeOfWaiting[i]++;
-                    if (create.timeOfWaiting[i] > create.maxWaitingTime - create.percentOfDelay * create.maxWaitingTime / 100)
-                        for (int j = 1; j < create.lanes; j++)
+                    mCreate.timeOfWaiting[i]++;
+                    if (mCreate.timeOfWaiting[i] > mCreate.maxWaitingTime - mCreate.percentOfDelay * mCreate.maxWaitingTime / 100)
+                        for (int j = 1; j < mCreate.lanes; j++)
                         {
                             if (priorityOfLanes[j] == i)
                             {
@@ -157,14 +214,14 @@ namespace ProgramForIntersection
         int fullOutput(int incomeWay)
         {
             int qtyCarsInFunc = 0;
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
                 if (getWayByLane(i) == incomeWay)
                 {
-                    qtyCarsInFunc += create.carsQty[i];
+                    qtyCarsInFunc += mCreate.carsQty[i];
                 }
             }
-            if (qtyCarsInFunc > (-1) * create.maxQtyOfCarsOnOut * create.wayArray[incomeWay])
+            if (qtyCarsInFunc > (-1) * mCreate.maxQtyOfCarsOnOut * mCreate.wayArray[incomeWay])
                 return 1;
             else
                 return 0;
@@ -173,9 +230,9 @@ namespace ProgramForIntersection
         int getDataNoExit()
         {
             int a = 0;
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
-                if (create.wayArray[i] < 0 && fullOutput(create.wayArray[i]) == 1)
+                if (mCreate.wayArray[i] < 0 && fullOutput(mCreate.wayArray[i]) == 1)
                 {
                     a = 1;
                 }
@@ -190,7 +247,7 @@ namespace ProgramForIntersection
         //отключает полосы у которых выходы закрыты
         //не связано с мозгами, ТУПО отключает
         {
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
                 int a = findAbsoluteWay(i), a1 = 0, a2 = 0;
                 if (a > 99)
@@ -203,9 +260,9 @@ namespace ProgramForIntersection
                     a1 = findAbsoluteWay(i);
                     a2 = findAbsoluteWay(i);
                 }
-                if (create.waysArrayBlocked[a1 % 10] == 1 || create.waysArrayBlocked[a2 % 10] == 1)
+                if (mCreate.waysArrayBlocked[a1 % 10] == 1 || mCreate.waysArrayBlocked[a2 % 10] == 1)
                 {
-                    create.turnOnLanes[i] = 0;
+                    mCreate.turnOnLanes[i] = 0;
                 }
             }
         }
@@ -213,10 +270,10 @@ namespace ProgramForIntersection
         public int getWayByLane(int lane)
         {
             int way = 0, laneBuff = lane;
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
-                laneBuff -= create.wayArray[i];
-                if (laneBuff < create.wayArray[i + 1])
+                laneBuff -= mCreate.wayArray[i];
+                if (laneBuff < mCreate.wayArray[i + 1])
                     way = i;
             }
             return way;
@@ -224,7 +281,7 @@ namespace ProgramForIntersection
         int findAbsoluteWay(int lane)
         {
             int way = getWayByLane(lane);
-            int cross = create.lanesArray[way + lane];
+            int cross = mCreate.lanesArray[way + lane];
             int a;
             if (way + cross >= 7)
                 a = way + cross - 8;
@@ -248,55 +305,52 @@ namespace ProgramForIntersection
             else
                 return 0;
         }
-        int cross(int a, int lane)
+
+
+        void setCross(int lane)
         {
-            if (a == 1)//запись в массив включенных
+            //запись в массив включенных
+            writedLanesToOn[lane] = 1;
+        }
+
+
+        bool isCross(int lane)
+        {
+            int absolWay = findAbsoluteWay(lane);
+            int absolWay1 = 0, absolWay2 = 0;
+            int crossing = 0;
+            if (absolWay > 99)
             {
-                writedLanesToOn[lane] = 1;
-                return 1488;
+                absolWay1 = (absolWay / 100) * 10 + absolWay % 10;
+                absolWay2 = (absolWay / 100) * 10 + ((absolWay % 100) / 10);
             }
-            if (a == 0)//проверка качества пересечения
+            if (absolWay <= 99)
             {
-                int absolWay = findAbsoluteWay(lane);
-                int absolWay1 = 0, absolWay2 = 0;
-                int crossing = 0;
-                if (absolWay > 99)
-                {
-                    absolWay1 = (absolWay / 100) * 10 + absolWay % 10;
-                    absolWay2 = (absolWay / 100) * 10 + ((absolWay % 100) / 10);
-                }
-                if (absolWay <= 99)
-                {
-                    absolWay1 = absolWay;
-                    absolWay2 = absolWay;
-                }
-                for (int i = 0; i < create.lanes; i++)
-                {
-                    if (writedLanesToOn[i] == 1)
-                    {
-                        if (checkCrossing(absolWay1, i) == 1 && checkCrossing(absolWay2, i) == 1)
-                            crossing++;
-                        else
-                        {; }
-                    }
-                }
-                if (crossing == 0)
-                    return 0;
-                else
-                    return 1;
+                absolWay1 = absolWay;
+                absolWay2 = absolWay;
             }
-            else
-                return 1488;
+            for (int i = 0; i < mCreate.lanes; i++)
+            {
+                if (writedLanesToOn[i] == 1)
+                {
+                    if (checkCrossing(absolWay1, i) == 1 && checkCrossing(absolWay2, i) == 1)
+                        crossing++;
+                    else
+                    {; }
+                }
+            }
+
+            return crossing == 0 ? false : true;
         }
 
         void turnOnWay()
         {
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
                 if (cross(0, priorityOfLanes[i]) == 0)
                 {
                     cross(1, priorityOfLanes[i]);
-                    create.turnOnLanes[i] = 1;
+                    mCreate.turnOnLanes[i] = 1;
                 }
             }
         }
@@ -305,33 +359,44 @@ namespace ProgramForIntersection
         {
             int qtyOfOnLanes = 0, maxQtyOfLanes = 0;
 
-            for (int i = 0; i < create.lanes; i++)
+            for (int i = 0; i < mCreate.lanes; i++)
             {
-                if (cross(0, priorityOfLanes[i]) == 0)
+                if (isCross(priorityOfLanes[i]))
                 {
-                    cross(1, priorityOfLanes[i]);
-                    create.turnOnLanes[i] = 1;
+                    setCross(priorityOfLanes[i]);
+                    mCreate.turnOnLanes[i] = 1;
                 }
                 qtyOfOnLanes++;
 
             }
         }
 
-        class simulaton
+    }
+        class ASimulaton
         {
-            public static int[] distanceCarForward = new int[create.lanes];
-            public static int[] timeOfWork = new int[create.lanes];
-            public static int qty = 0;
-            public static int l1 = 0, l2 = 1; //l1-прав. нижн. угол, l2-лев.нижн. угол
+            private readonly ACreate mCreate = null;
+
+            public int[] distanceCarForward = null;
+            public int[] timeOfWork = null;
+            public int qty = 0;
+            public int l1 = 0, l2 = 1; //l1-прав. нижн. угол, l2-лев.нижн. угол
+
+            public ASimulaton(ACreate create)
+            {
+                mCreate = create;
+                distanceCarForward = new int[mCreate.lanes];
+                timeOfWork = new int[mCreate.lanes];
+            }
+
             void renewTimeOfWork()
             {
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
-                    if (create.turnOnLanes[i] == 1 && create.turnOnLanes[i] > 0)
+                    if (mCreate.turnOnLanes[i] == 1 && mCreate.turnOnLanes[i] > 0)
                     {
                         timeOfWork[i]++;
                     }
-                    if (create.turnOnLanes[i] == 1 && create.turnOnLanes[i] < 0)
+                    if (mCreate.turnOnLanes[i] == 1 && mCreate.turnOnLanes[i] < 0)
                     {
                         timeOfWork[i] = 1;
                     }
@@ -341,12 +406,12 @@ namespace ProgramForIntersection
             void centeralFunc()
             {
                 int qtyBuff = 0;
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
-                    if (create.turnOnLanes[i] == 1)
+                    if (mCreate.turnOnLanes[i] == 1)
                     {
                         qtyBuff = leavedCars(timeOfWork[i]) - leavedCars(timeOfWork[i] - 1);
-                        create.carsQty[i] -= qtyBuff;
+                        mCreate.carsQty[i] -= qtyBuff;
                         qty += qtyBuff;
                     }
                 }
@@ -373,10 +438,10 @@ namespace ProgramForIntersection
                 int k = 0;
                 for (int i = 0; i < qty; i++)
                 {
-                    for (int j = 0; j < create.lanes; j++)
+                    for (int j = 0; j < mCreate.lanes; j++)
                     {
                         if (k == rnd.Next(1, 100) % (season + 1))
-                            create.carsQty[j]++;
+                            mCreate.carsQty[j]++;
                     }
                 }
             }
@@ -384,11 +449,11 @@ namespace ProgramForIntersection
             void outMetaData()//выводит в консоль
             {
                 qty = 0;
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
-                    Console.Write(create.carsQty[i]); //количество машин
+                    Console.Write(mCreate.carsQty[i]); //количество машин
                     Console.Write(timeOfWork[i]); //время работы полос
-                    Console.Write(create.turnOnLanes[i]); //состояние полос
+                    Console.Write(mCreate.turnOnLanes[i]); //состояние полос
                 }
                 Console.Write(qty); //общее количество выехавших машин
             }
@@ -415,14 +480,13 @@ namespace ProgramForIntersection
 
             void outGraphics()
             {
-                for (int i = 0; i < create.lanes; i++)
+                for (int i = 0; i < mCreate.lanes; i++)
                 {
-                    if (create.turnOnLanes[i] == 1)
+                    if (mCreate.turnOnLanes[i] == 1)
                     {
                         //printMovingCars(i);
                     }
                 }
             }
-        }
     }
 }
